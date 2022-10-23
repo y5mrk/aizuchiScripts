@@ -90,7 +90,7 @@ def main():
                 #assistant.detectSpeaking()
                 interval()
                 aizuchi()
-                # board.button.when_pressed = isPlaying = False
+                # board.button.when_pressed = stop()
             else:
                 update_led(board, Led.ON, 0.1)
                 logging.info('Press button to start conversation...')

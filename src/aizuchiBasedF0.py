@@ -8,6 +8,8 @@ import librosa
 import pandas as pd
 import random
 import subprocess
+import asyncio
+import time
 
 RATE = 44100
 audio = pyaudio.PyAudio()
@@ -35,7 +37,7 @@ def savewav(sig,fileName):
     w.close()
 
 def aizuchi():
-    aizuchi_list = ['うん', 'うんうん', 'へー', 'ふーん', 'うん、うん']
+    aizuchi_list = ['うん', 'へー', 'ふーん']
     text = random.choice(aizuchi_list)
     say(text)
     print("相槌: " + text)
@@ -43,6 +45,10 @@ def aizuchi():
 
 def say(text):
     subprocess.call('say "%s"' % text, shell = True)
+
+def waitAizuchi():
+    time.sleep(0.5)  # 重い処理の代わり
+    aizuchi()
 
 while True:
   try:
@@ -78,7 +84,8 @@ while True:
             print("今のF0_min")
             print(minValue)
             if minValue < allAverage - threshold:
-                aizuchi()
+                print("相槌まで0.5秒")
+                asyncio.new_event_loop().run_in_executor(None, waitAizuchi)
 		
   except KeyboardInterrupt: ## ctrl+c で終了
 		  break

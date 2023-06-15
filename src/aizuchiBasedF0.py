@@ -45,8 +45,8 @@ def aizuchi():
 def say(text):
     subprocess.call('say "%s"' % text, shell = True)
 
-def waitAizuchi():
-    time.sleep(0.5)
+def waitAizuchi(poseTime):
+    time.sleep(poseTime)
     aizuchi()
     time.sleep(1)
     print("音声タイミングの検出を再開します")
@@ -85,8 +85,9 @@ while True:
             print("今のF0_min")
             print(minValue)
             if minValue < allAverage - threshold:
-                print("相槌まで0.5秒")
-                waitAizuchi()
+                poseTime = random.uniform(0.25, 0.5)
+                print("相槌まで%s秒" % poseTime)
+                waitAizuchi(poseTime)
 		
   except KeyboardInterrupt: ## ctrl+c で終了
 		  break

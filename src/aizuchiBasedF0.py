@@ -76,14 +76,10 @@ while True:
             allData = np.append(allData, df_f0)
             allAverage = np.average(allData)
             threshold = allAverage * 0.2
-            print("全体の平均: ")
-            print(allAverage)
-            print("閾値: ")
-            print(allAverage - threshold)
-            print("今のF0_avrage")
-            print(pitch_yin)
-            print("今のF0_min")
-            print(minValue)
+            print("全体の平均: %s" % allAverage)
+            print("閾値: %s" % (allAverage - threshold))
+            print("今のF0_avrage: %s" % pitch_yin)
+            print("今のF0_min: %s" % minValue)
             if minValue < allAverage - threshold:
                 poseTime = random.uniform(0.25, 0.5)
                 print("相槌まで%s秒" % poseTime)

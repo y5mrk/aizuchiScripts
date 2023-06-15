@@ -8,7 +8,6 @@ import librosa
 import pandas as pd
 import random
 import subprocess
-import asyncio
 import time
 
 RATE = 44100
@@ -21,7 +20,7 @@ stream = audio.open(format = pyaudio.paInt16,
         frames_per_buffer = CHUNK,
         input = True)
 
-allData=np.empty(0)
+allData = np.empty(0)
 
 def savewav(sig,fileName):
     RATE = 44100 #サンプリング周波数
@@ -47,8 +46,10 @@ def say(text):
     subprocess.call('say "%s"' % text, shell = True)
 
 def waitAizuchi():
-    time.sleep(0.5)  # 重い処理の代わり
+    time.sleep(0.5)
     aizuchi()
+    time.sleep(1)
+    print("音声タイミングの検出を再開します")
 
 while True:
   try:
@@ -85,7 +86,7 @@ while True:
             print(minValue)
             if minValue < allAverage - threshold:
                 print("相槌まで0.5秒")
-                asyncio.new_event_loop().run_in_executor(None, waitAizuchi)
+                waitAizuchi()
 		
   except KeyboardInterrupt: ## ctrl+c で終了
 		  break

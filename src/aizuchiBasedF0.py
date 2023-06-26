@@ -40,6 +40,8 @@ def aizuchi():
     text = random.choice(aizuchi_list)
     say(text)
     print("相槌: " + text)
+    allData = np.empty(0) # 相槌を打ったらデータをリセットする
+    print("データをリセット")
     return
 
 def say(text):

@@ -83,7 +83,7 @@ while True:
             print("今のF0_avrage: %s" % pitch_yin)
             print("今のF0_min: %s" % minValue)
             if minValue < allAverage - threshold:
-                poseTime = random.uniform(0.25, 0.5)
+                poseTime = 0.5
                 print("相槌まで%s秒" % poseTime)
                 waitAizuchi(poseTime)
 		

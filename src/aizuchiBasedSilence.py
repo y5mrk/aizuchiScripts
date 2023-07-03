@@ -16,7 +16,7 @@ RATE = 44100
 RECORD_SECONDS = 2
 
 # 閾値
-threshold = 35.0
+threshold = 45.0
 
 # 音の取込開始
 audio = pyaudio.PyAudio()

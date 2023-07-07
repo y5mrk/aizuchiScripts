@@ -26,6 +26,10 @@ allData = np.empty(0)
 # 閾値
 soundLevelThreshold = 45.0
 
+enableAizuchi = False
+poseTime = 0.5
+detectedTime = time.perf_counter()
+
 def savewav(sig,fileName):
   RATE = 44100 #サンプリング周波数
   #サイン波を-32768から32767の整数値に変換(signed 16bit pcmへ)
@@ -51,12 +55,6 @@ def aizuchi():
 def say(text):
   subprocess.call('say "%s"' % text, shell = True)
 
-def waitAizuchi(poseTime):
-  time.sleep(poseTime)
-  aizuchi()
-  time.sleep(1)
-  print("音声タイミングの検出を再開します")
-
 def soundLevelMeter(data):
   rms = data.max()
   db = 20 * math.log10(rms) if rms > 0.0 else -math.inf
@@ -64,6 +62,12 @@ def soundLevelMeter(data):
     print(f"音を検知：{db}")
 
 while True:
+  if enableAizuchi:
+    if time.perf_counter() - detectedTime > poseTime:
+      aizuchi()
+      time.sleep(2)
+      enableAizuchi = False
+      print("音声タイミングの検出を再開します")
   try:
       input = stream.read(CHUNK, exception_on_overflow = False)
       x = np.frombuffer(input, dtype="int16")
@@ -95,10 +99,10 @@ while True:
           print("閾値: %s" % (allAverage - threshold))
           print("今のF0_avrage: %s" % pitch_yin)
           print("今のF0_min: %s" % minValue)
-          if minValue < allAverage - threshold:
-            poseTime = 0.5
+          if minValue < allAverage - threshold and (not enableAizuchi):
+            enableAizuchi = True
+            detectedTime = time.perf_counter()
             print("相槌まで%s秒" % poseTime)
-            waitAizuchi(poseTime)
 		
   except KeyboardInterrupt: ## ctrl+c で終了
     break

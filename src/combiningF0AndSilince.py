@@ -10,6 +10,7 @@ import random
 import subprocess
 import time
 import math
+import os
 
 RATE = 44100
 audio = pyaudio.PyAudio()
@@ -67,14 +68,11 @@ while True:
       aizuchi()
       time.sleep(2)
       enableAizuchi = False
-      print("音声タイミングの検出を再開します")
+      print("相槌タイミングの検出を再開します")
   try:
       input = stream.read(CHUNK, exception_on_overflow = False)
-      x = np.frombuffer(input, dtype="int16")
-      soundLevelMeter(x)
-
       sig = []
-      sig = x / 32768
+      sig = np.frombuffer(input, dtype="int16") / 32768
       now_dt = datetime.datetime.now() #現在時刻
       fileName = now_dt.isoformat()
       savewav(sig,fileName)
@@ -88,21 +86,22 @@ while True:
       df_f0 = df_f0.dropna(how='all')
       
       if len(df_f0)!=0:
-        # print(df_f0.describe())
         pitch_yin = np.average(df_f0)
         if pitch_yin > 80 and pitch_yin < 500:
+          if enableAizuchi:
+            enableAizuchi = False
+            print("発話が続いているため相槌をキャンセル")
           minValue = df_f0.min()
           allData = np.append(allData, df_f0)
           allAverage = np.average(allData)
           threshold = allAverage * 0.2
-          print("全体の平均: %s" % allAverage)
-          print("閾値: %s" % (allAverage - threshold))
-          print("今のF0_avrage: %s" % pitch_yin)
-          print("今のF0_min: %s" % minValue)
+          print(f"平均: {allAverage}, 閾値: {allAverage - threshold}, 今のF0_min: {minValue}")
           if minValue < allAverage - threshold and (not enableAizuchi):
             enableAizuchi = True
             detectedTime = time.perf_counter()
             print("相槌まで%s秒" % poseTime)
+      
+      # os.remove(filepath)
 		
   except KeyboardInterrupt: ## ctrl+c で終了
     break

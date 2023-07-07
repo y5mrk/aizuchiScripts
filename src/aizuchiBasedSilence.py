@@ -64,7 +64,7 @@ while True:
       if not isSpeaking:
         isSpeaking = True
         speakingStart = time.perf_counter()
-        print("音を検知")
+        print(f"音を検知：{db}")
     else:
       if isSpeaking:
         silenceStart = time.perf_counter()

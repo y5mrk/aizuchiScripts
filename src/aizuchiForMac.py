@@ -32,9 +32,12 @@ def listen():
       print("なにか話してください")
       audio = r.listen(source)
       print("音声を取得しました")
-  recognized_text = r.recognize_google(audio, language='ja-JP')
-  print(recognized_text)
-  aizuchi()
+  try:
+      recognized_text = r.recognize_google(audio, language='ja-JP')
+      print(recognized_text)
+      aizuchi()
+  except sr.UnknownValueError:
+      print("認識できませんでした")
 
 if __name__ == "__main__":
   while True:

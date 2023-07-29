@@ -11,6 +11,8 @@ import subprocess
 import time
 import math
 import os
+import speech_recognition as sr
+import MeCab
 
 RATE = 44100
 audio = pyaudio.PyAudio()
@@ -62,50 +64,66 @@ def soundLevelMeter(data):
   if db > soundLevelThreshold:
     print(f"音を検知：{db}")
 
-while True:
-  if enableAizuchi:
-    if time.perf_counter() - detectedTime > poseTime:
-      aizuchi()
-      time.sleep(2)
-      enableAizuchi = False
-      print("相槌タイミングの検出を再開します")
+
+def listen():
+  r = sr.Recognizer()
+  with sr.Microphone(sample_rate=16_000) as source:
+      print("なにか話してください")
+      audio = r.listen(source)
+      print("音声を取得しました")
   try:
-      input = stream.read(CHUNK, exception_on_overflow = False)
-      sig = []
-      sig = np.frombuffer(input, dtype="int16") / 32768
-      now_dt = datetime.datetime.now() #現在時刻
-      fileName = now_dt.isoformat()
-      savewav(sig,fileName)
+      recognized_text = r.recognize_google(audio, language='ja-JP')
+      print(recognized_text)
+      aizuchi()
+  except sr.UnknownValueError:
+      print("認識できませんでした")
 
-      filepath = "./data/sample_"+fileName+".wav"
-      y, sr = librosa.load(filepath)
-      f0, voiced_flag, voiced_probs = librosa.pyin(y, fmin = librosa.note_to_hz('C2'), fmax = librosa.note_to_hz('C7'))
-      times = librosa.times_like(f0)
+if __name__ == "__main__":
+  while True:
+    # listen()
+    if enableAizuchi:
+      if time.perf_counter() - detectedTime > poseTime:
+        aizuchi()
+        time.sleep(2)
+        enableAizuchi = False
+        print("相槌タイミングの検出を再開します")
+    try:
+        input = stream.read(CHUNK, exception_on_overflow = False)
+        sig = []
+        sig = np.frombuffer(input, dtype="int16") / 32768
+        now_dt = datetime.datetime.now() #現在時刻
+        fileName = now_dt.isoformat()
+        savewav(sig,fileName)
 
-      df_f0 = pd.Series(f0)
-      df_f0 = df_f0.dropna(how='all')
+        filepath = "./data/sample_"+fileName+".wav"
+        y, sr = librosa.load(filepath)
+        f0, voiced_flag, voiced_probs = librosa.pyin(y, fmin = librosa.note_to_hz('C2'), fmax = librosa.note_to_hz('C7'))
+        times = librosa.times_like(f0)
+
+        df_f0 = pd.Series(f0)
+        df_f0 = df_f0.dropna(how='all')
+        
+        if len(df_f0)!=0:
+          pitch_yin = np.average(df_f0)
+          if pitch_yin > 80 and pitch_yin < 500:
+            if enableAizuchi:
+              enableAizuchi = False
+              print("発話が続いているため相槌をキャンセル")
+            minValue = df_f0.min()
+            allData = np.append(allData, df_f0)
+            allAverage = np.average(allData)
+            threshold = allAverage * 0.2
+            print(f"平均: {allAverage}, 閾値: {allAverage - threshold}, 今のF0_min: {minValue}")
+            if minValue < allAverage - threshold and (not enableAizuchi):
+              enableAizuchi = True
+              detectedTime = time.perf_counter()
+              print("相槌まで%s秒" % poseTime)
+        
+        # os.remove(filepath)
       
-      if len(df_f0)!=0:
-        pitch_yin = np.average(df_f0)
-        if pitch_yin > 80 and pitch_yin < 500:
-          if enableAizuchi:
-            enableAizuchi = False
-            print("発話が続いているため相槌をキャンセル")
-          minValue = df_f0.min()
-          allData = np.append(allData, df_f0)
-          allAverage = np.average(allData)
-          threshold = allAverage * 0.2
-          print(f"平均: {allAverage}, 閾値: {allAverage - threshold}, 今のF0_min: {minValue}")
-          if minValue < allAverage - threshold and (not enableAizuchi):
-            enableAizuchi = True
-            detectedTime = time.perf_counter()
-            print("相槌まで%s秒" % poseTime)
-      
-      # os.remove(filepath)
-		
-  except KeyboardInterrupt: ## ctrl+c で終了
-    break
+    except KeyboardInterrupt: ## ctrl+c で終了
+      break
 
-stream.stop_stream()
-stream.close()
-audio.terminate()
+  stream.stop_stream()
+  stream.close()
+  audio.terminate()

@@ -65,22 +65,8 @@ def soundLevelMeter(data):
     print(f"音を検知：{db}")
 
 
-def listen():
-  r = sr.Recognizer()
-  with sr.Microphone(sample_rate=16_000) as source:
-      print("なにか話してください")
-      audio = r.listen(source)
-      print("音声を取得しました")
-  try:
-      recognized_text = r.recognize_google(audio, language='ja-JP')
-      print(recognized_text)
-      aizuchi()
-  except sr.UnknownValueError:
-      print("認識できませんでした")
-
 if __name__ == "__main__":
   while True:
-    # listen()
     if enableAizuchi:
       if time.perf_counter() - detectedTime > poseTime:
         aizuchi()

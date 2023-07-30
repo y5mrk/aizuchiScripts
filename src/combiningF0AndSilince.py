@@ -13,6 +13,8 @@ import math
 import os
 import speech_recognition as sr
 import MeCab
+import whisper
+import threading
 
 RATE = 44100
 audio = pyaudio.PyAudio()
@@ -33,14 +35,14 @@ enableAizuchi = False
 poseTime = 0.5
 detectedTime = time.perf_counter()
 
-def savewav(sig,fileName):
+def savewav(sig,filePath):
   RATE = 44100 #サンプリング周波数
   #サイン波を-32768から32767の整数値に変換(signed 16bit pcmへ)
   swav = [(int(32767*x)) for x in sig] #32767
   #バイナリ化
   binwave = struct.pack("h" * len(swav), *swav)
   #サイン波をwavファイルとして書き出し
-  w = wave.Wave_write("./data/sample_"+fileName+".wav")
+  w = wave.Wave_write(filePath)
   params = (1, 2, RATE, len(binwave), 'NONE', 'not compressed')
   w.setparams(params)
   w.writeframes(binwave)
@@ -64,8 +66,15 @@ def soundLevelMeter(data):
   if db > soundLevelThreshold:
     print(f"音を検知：{db}")
 
+def transcribeWav():
+  while True:
+    model = whisper.load_model("base")
+    result = model.transcribe("99.wav")
+    print(result["text"])
 
-if __name__ == "__main__":
+def detectAizuchi():
+  global enableAizuchi
+  global allData
   while True:
     if enableAizuchi:
       if time.perf_counter() - detectedTime > poseTime:
@@ -78,11 +87,12 @@ if __name__ == "__main__":
         sig = []
         sig = np.frombuffer(input, dtype="int16") / 32768
         now_dt = datetime.datetime.now() #現在時刻
-        fileName = now_dt.isoformat()
-        savewav(sig,fileName)
+        isoDate = now_dt.isoformat()
+        filePath = "./data/sample_"+isoDate+".wav"
 
-        filepath = "./data/sample_"+fileName+".wav"
-        y, sr = librosa.load(filepath)
+        savewav(sig,filePath)
+
+        y, sr = librosa.load(filePath)
         f0, voiced_flag, voiced_probs = librosa.pyin(y, fmin = librosa.note_to_hz('C2'), fmax = librosa.note_to_hz('C7'))
         times = librosa.times_like(f0)
 
@@ -105,7 +115,7 @@ if __name__ == "__main__":
               detectedTime = time.perf_counter()
               print("相槌まで%s秒" % poseTime)
         
-        # os.remove(filepath)
+        # os.remove(filePath)
       
     except KeyboardInterrupt: ## ctrl+c で終了
       break
@@ -113,3 +123,12 @@ if __name__ == "__main__":
   stream.stop_stream()
   stream.close()
   audio.terminate()
+
+if __name__ == "__main__":
+  t1 = threading.Thread(target=detectAizuchi)
+  t2 = threading.Thread(target=transcribeWav)
+  t1.setDaemon(True)
+  t1.start()
+  t2.start()
+  print('started')
+  t1.join(timeout=5)

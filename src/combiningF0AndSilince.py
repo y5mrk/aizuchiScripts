@@ -35,6 +35,8 @@ enableAizuchi = False
 poseTime = 0.5
 detectedTime = time.perf_counter()
 
+wavFiles = []
+
 def savewav(sig,filePath):
   RATE = 44100 #サンプリング周波数
   #サイン波を-32768から32767の整数値に変換(signed 16bit pcmへ)
@@ -66,15 +68,44 @@ def soundLevelMeter(data):
   if db > soundLevelThreshold:
     print(f"音を検知：{db}")
 
+def joinWaves(inputs, output):
+    try:
+        fps = [wave.open(f, 'r') for f in inputs]
+        fpw = wave.open(output, 'w')
+
+        fpw.setnchannels(fps[0].getnchannels())
+        fpw.setsampwidth(fps[0].getsampwidth())
+        fpw.setframerate(fps[0].getframerate())
+        
+        for fp in fps:
+            fpw.writeframes(fp.readframes(fp.getnframes()))
+            fp.close()
+        fpw.close()
+
+    except wave.Error:
+        print("wavの統合エラー")
+
+    except Exception:
+        print('wavの統合エラー（unexpected error）')
+
 def transcribeWav():
+  global wavFiles
   while True:
+    if len(wavFiles) < 1:
+      continue
+    inputFiles = wavFiles
+    print(inputFiles)
+    wavFiles = []
+    outputFilePath = './data/sample.wav'
+    joinWaves(inputFiles,outputFilePath)
     model = whisper.load_model("base")
-    result = model.transcribe("99.wav")
+    result = model.transcribe(outputFilePath)
     print(result["text"])
 
 def detectAizuchi():
   global enableAizuchi
   global allData
+  global wavFiles
   while True:
     if enableAizuchi:
       if time.perf_counter() - detectedTime > poseTime:
@@ -91,6 +122,7 @@ def detectAizuchi():
         filePath = "./data/sample_"+isoDate+".wav"
 
         savewav(sig,filePath)
+        wavFiles.append(filePath)
 
         y, sr = librosa.load(filePath)
         f0, voiced_flag, voiced_probs = librosa.pyin(y, fmin = librosa.note_to_hz('C2'), fmax = librosa.note_to_hz('C7'))
@@ -127,7 +159,7 @@ def detectAizuchi():
 if __name__ == "__main__":
   t1 = threading.Thread(target=detectAizuchi)
   t2 = threading.Thread(target=transcribeWav)
-  t1.setDaemon(True)
+  t1.daemon = True
   t1.start()
   t2.start()
   print('started')

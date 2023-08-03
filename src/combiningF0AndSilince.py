@@ -36,7 +36,11 @@ enableAizuchi = False
 poseTime = 0.5
 detectedTime = time.perf_counter()
 
+detectedSilence = False
+detectedSilenceTime = time.perf_counter()
+
 wavFiles = []
+terms = []
 
 load_dotenv()
 openai.organization = os.environ['API_ORG']
@@ -74,13 +78,13 @@ def soundLevelMeter(data):
   if db > soundLevelThreshold:
     print(f"音を検知：{db}")
 
-def requestGPTAPI(terms):
-  if len(terms) > 1:
+def requestGPTAPI(words):
+  if len(words) > 1:
     completion = openai.ChatCompletion.create(
       model="gpt-3.5-turbo",
       messages=[
         {"role": "system", "content": "あなたは友達のように、ユーザの日常について、簡潔に質問するアシスタントです。"},
-        {"role": "user", "content": "「"+ terms[0] +"」「" + terms[1] + "」に関して何か1つ話題を振ってください"}
+        {"role": "user", "content": "「"+ words[0] +"」「" + words[1] + "」に関して何か1つ話題を振ってください"}
       ]
     )
 
@@ -90,7 +94,6 @@ def requestGPTAPI(terms):
 def analyse(text):
   tagger = MeCab.Tagger()
   node = tagger.parseToNode(text)
-  terms = []
 
   while node:
       term = node.surface
@@ -103,7 +106,6 @@ def analyse(text):
       node = node.next
   
   print("名詞：%sを検出" % terms)
-  requestGPTAPI(terms)
 
 def joinWaves(inputs, output):
   try:
@@ -139,12 +141,30 @@ def transcribeWav():
     model = whisper.load_model("base")
     result = model.transcribe(outputFilePath)
     print(result["text"])
-    # analyse(result["text"])
+    analyse(result["text"])
+
+def detectSilence():
+  global detectedSilence
+  global detectedSilenceTime
+  if detectedSilence:
+    if time.perf_counter() - detectedSilenceTime > 10:
+      print("10秒以上沈黙")
+      if len(terms) >= 2:
+        words = []
+        words.append(terms.pop(-1))
+        words.append(terms.pop(-1))
+        requestGPTAPI(words)
+      detectedSilence = False
+  else:
+    detectedSilence = True
+    detectedSilenceTime = time.perf_counter()
 
 def detectAizuchi():
   global enableAizuchi
   global allData
   global wavFiles
+  global detectedSilence
+  global detectedSilenceTime
   while True:
     if enableAizuchi:
       if time.perf_counter() - detectedTime > poseTime:
@@ -173,6 +193,7 @@ def detectAizuchi():
         if len(df_f0)!=0:
           pitch_yin = np.average(df_f0)
           if pitch_yin > 80 and pitch_yin < 500:
+            detectedSilence = False
             if enableAizuchi:
               enableAizuchi = False
               print("発話が続いているため相槌をキャンセル")
@@ -186,9 +207,32 @@ def detectAizuchi():
               detectedTime = time.perf_counter()
               print("相槌まで%s秒" % poseTime)
           else:
-            print("沈黙")
+            if detectedSilence:
+              if time.perf_counter() - detectedSilenceTime > 10:
+                print("10秒以上沈黙")
+                if len(terms) >= 2:
+                  words = []
+                  words.append(terms.pop(-1))
+                  words.append(terms.pop(-1))
+                  requestGPTAPI(words)
+                detectedSilence = False
+            else:
+              detectedSilence = True
+              detectedSilenceTime = time.perf_counter()
         else:
-          print("沈黙2")
+          detectSilence()
+          if detectedSilence:
+            if time.perf_counter() - detectedSilenceTime > 10:
+              print("10秒以上沈黙")
+              if len(terms) >= 2:
+                words = []
+                words.append(terms.pop(-1))
+                words.append(terms.pop(-1))
+                requestGPTAPI(words)
+              detectedSilence = False
+          else:
+            detectedSilence = True
+            detectedSilenceTime = time.perf_counter()
 
         # os.remove(filePath)
       

@@ -4,9 +4,11 @@ import MeCab
 import os
 import openai
 import urllib.parse
+from dotenv import load_dotenv
 
-openai.organization = "org-pdCw9g7lFMPWmKG46qtGZhJi"
-openai.api_key = "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"
+load_dotenv()
+openai.organization = os.environ['API_ORG']
+openai.api_key = os.environ['API_KEY']
 openai.Model.list()
 
 def join_waves(inputs, output):
@@ -55,7 +57,7 @@ def analyse(text):
         model="gpt-3.5-turbo",
         messages=[
           {"role": "system", "content": "あなたは友達のように、ユーザの日常について、簡潔に質問するアシスタントです。"},
-          {"role": "user", "content": "「"+ terms[0] +"」" + terms[1] + "に関して何か1つ話題を振ってください"}
+          {"role": "user", "content": "「"+ terms[0] +"」「" + terms[1] + "」に関して何か1つ話題を振ってください"}
         ]
       )
 

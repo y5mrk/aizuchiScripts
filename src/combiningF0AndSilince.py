@@ -1,5 +1,4 @@
 import pyaudio
-import matplotlib.pyplot as plt
 import numpy as np
 import wave
 import struct
@@ -15,6 +14,8 @@ import speech_recognition as sr
 import MeCab
 import whisper
 import threading
+from dotenv import load_dotenv
+import openai
 
 RATE = 44100
 audio = pyaudio.PyAudio()
@@ -36,6 +37,11 @@ poseTime = 0.5
 detectedTime = time.perf_counter()
 
 wavFiles = []
+
+load_dotenv()
+openai.organization = os.environ['API_ORG']
+openai.api_key = os.environ['API_KEY']
+openai.Model.list()
 
 def savewav(sig,filePath):
   RATE = 44100 #サンプリング周波数
@@ -68,30 +74,62 @@ def soundLevelMeter(data):
   if db > soundLevelThreshold:
     print(f"音を検知：{db}")
 
+def requestGPTAPI(terms):
+  if len(terms) > 1:
+    completion = openai.ChatCompletion.create(
+      model="gpt-3.5-turbo",
+      messages=[
+        {"role": "system", "content": "あなたは友達のように、ユーザの日常について、簡潔に質問するアシスタントです。"},
+        {"role": "user", "content": "「"+ terms[0] +"」「" + terms[1] + "」に関して何か1つ話題を振ってください"}
+      ]
+    )
+
+    print(completion.choices[0].message.content)
+    say(completion.choices[0].message.content)
+
+def analyse(text):
+  tagger = MeCab.Tagger()
+  node = tagger.parseToNode(text)
+  terms = []
+
+  while node:
+      term = node.surface
+      pos = node.feature.split(',')[0]
+      
+      if pos == '名詞':
+        if term != '?':
+          terms.append(term)
+
+      node = node.next
+  
+  print("名詞：%sを検出" % terms)
+  requestGPTAPI(terms)
+
 def joinWaves(inputs, output):
-    try:
-        fps = [wave.open(f, 'r') for f in inputs]
-        fpw = wave.open(output, 'w')
+  try:
+    fps = [wave.open(f, 'r') for f in inputs]
+    fpw = wave.open(output, 'w')
 
-        fpw.setnchannels(fps[0].getnchannels())
-        fpw.setsampwidth(fps[0].getsampwidth())
-        fpw.setframerate(fps[0].getframerate())
-        
-        for fp in fps:
-            fpw.writeframes(fp.readframes(fp.getnframes()))
-            fp.close()
-        fpw.close()
+    fpw.setnchannels(fps[0].getnchannels())
+    fpw.setsampwidth(fps[0].getsampwidth())
+    fpw.setframerate(fps[0].getframerate())
+    
+    for fp in fps:
+        fpw.writeframes(fp.readframes(fp.getnframes()))
+        fp.close()
+    fpw.close()
 
-    except wave.Error:
-        print("wavの統合エラー")
+  except wave.Error:
+    print("wavの統合エラー")
 
-    except Exception:
-        print('wavの統合エラー（unexpected error）')
+  except Exception:
+    print('wavの統合エラー（unexpected error）')
 
 def transcribeWav():
   global wavFiles
   while True:
-    if len(wavFiles) < 1:
+    if len(wavFiles) < 2:
+      time.sleep(0.5)
       continue
     inputFiles = wavFiles
     print(inputFiles)
@@ -101,6 +139,7 @@ def transcribeWav():
     model = whisper.load_model("base")
     result = model.transcribe(outputFilePath)
     print(result["text"])
+    # analyse(result["text"])
 
 def detectAizuchi():
   global enableAizuchi
@@ -146,7 +185,11 @@ def detectAizuchi():
               enableAizuchi = True
               detectedTime = time.perf_counter()
               print("相槌まで%s秒" % poseTime)
-        
+          else:
+            print("沈黙")
+        else:
+          print("沈黙2")
+
         # os.remove(filePath)
       
     except KeyboardInterrupt: ## ctrl+c で終了

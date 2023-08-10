@@ -16,6 +16,7 @@ import whisper
 import threading
 from dotenv import load_dotenv
 import openai
+from playsound import playsound
 
 RATE = 44100
 audio = pyaudio.PyAudio()
@@ -35,6 +36,7 @@ soundLevelThreshold = 45.0
 enableAizuchi = False
 poseTime = 0.5
 detectedTime = time.perf_counter()
+waitingSilence = False
 
 detectedSilence = False
 detectedSilenceTime = time.perf_counter()
@@ -61,7 +63,7 @@ def savewav(sig,filePath):
   w.close()
 
 def aizuchi():
-  aizuchi_list = ['うん', 'ふーん']
+  aizuchi_list = ['うん', 'ふーん', 'はい']
   text = random.choice(aizuchi_list)
   say(text)
   print("相槌: " + text)
@@ -165,12 +167,14 @@ def detectAizuchi():
   global wavFiles
   global detectedSilence
   global detectedSilenceTime
+  global waitingSilence
   while True:
     if enableAizuchi:
-      if time.perf_counter() - detectedTime > poseTime:
+      if time.perf_counter() - detectedTime > poseTime or waitingSilence:
         aizuchi()
         time.sleep(2)
         enableAizuchi = False
+        waitingSilence = False
         print("相槌タイミングの検出を再開します")
     try:
         input = stream.read(CHUNK, exception_on_overflow = False)
@@ -181,7 +185,7 @@ def detectAizuchi():
         filePath = "./data/sample_"+isoDate+".wav"
 
         savewav(sig,filePath)
-        wavFiles.append(filePath)
+        # wavFiles.append(filePath)
 
         y, sr = librosa.load(filePath)
         f0, voiced_flag, voiced_probs = librosa.pyin(y, fmin = librosa.note_to_hz('C2'), fmax = librosa.note_to_hz('C7'))
@@ -196,6 +200,7 @@ def detectAizuchi():
             detectedSilence = False
             if enableAizuchi:
               enableAizuchi = False
+              waitingSilence = True
               print("発話が続いているため相槌をキャンセル")
             minValue = df_f0.min()
             allData = np.append(allData, df_f0)
@@ -208,27 +213,20 @@ def detectAizuchi():
               print("相槌まで%s秒" % poseTime)
           else:
             if detectedSilence:
-              if time.perf_counter() - detectedSilenceTime > 10:
-                print("10秒以上沈黙")
-                if len(terms) >= 2:
-                  words = []
-                  words.append(terms.pop(-1))
-                  words.append(terms.pop(-1))
-                  requestGPTAPI(words)
+              if time.perf_counter() - detectedSilenceTime > 0.5:
+                if waitingSilence:
+                  print("0.5秒以上沈黙")
+                  enableAizuchi = True
                 detectedSilence = False
             else:
               detectedSilence = True
               detectedSilenceTime = time.perf_counter()
         else:
-          detectSilence()
           if detectedSilence:
-            if time.perf_counter() - detectedSilenceTime > 10:
-              print("10秒以上沈黙")
-              if len(terms) >= 2:
-                words = []
-                words.append(terms.pop(-1))
-                words.append(terms.pop(-1))
-                requestGPTAPI(words)
+            if time.perf_counter() - detectedSilenceTime > 0.5:
+              if waitingSilence:
+                print("0.5秒以上沈黙")
+                enableAizuchi = True
               detectedSilence = False
           else:
             detectedSilence = True
@@ -244,10 +242,4 @@ def detectAizuchi():
   audio.terminate()
 
 if __name__ == "__main__":
-  t1 = threading.Thread(target=detectAizuchi)
-  t2 = threading.Thread(target=transcribeWav)
-  t1.daemon = True
-  t1.start()
-  t2.start()
-  print('started')
-  t1.join(timeout=5)
+  detectAizuchi()

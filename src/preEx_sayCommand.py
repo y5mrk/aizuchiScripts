@@ -170,7 +170,7 @@ def detectAizuchi():
   global waitingSilence
   while True:
     if enableAizuchi:
-      if time.perf_counter() - detectedTime > poseTime or waitingSilence:
+      if time.perf_counter() - detectedTime > poseTime:
         aizuchi()
         time.sleep(2)
         enableAizuchi = False
@@ -211,26 +211,26 @@ def detectAizuchi():
               enableAizuchi = True
               detectedTime = time.perf_counter()
               print("相槌まで%s秒" % poseTime)
-          else:
-            if detectedSilence:
-              if time.perf_counter() - detectedSilenceTime > 0.5:
-                if waitingSilence:
-                  print("0.5秒以上沈黙")
-                  enableAizuchi = True
-                detectedSilence = False
-            else:
-              detectedSilence = True
-              detectedSilenceTime = time.perf_counter()
-        else:
-          if detectedSilence:
-            if time.perf_counter() - detectedSilenceTime > 0.5:
-              if waitingSilence:
-                print("0.5秒以上沈黙")
-                enableAizuchi = True
-              detectedSilence = False
-          else:
-            detectedSilence = True
-            detectedSilenceTime = time.perf_counter()
+        #   else:
+        #     if detectedSilence:
+        #       if time.perf_counter() - detectedSilenceTime > 0.5:
+        #         if waitingSilence:
+        #           print("0.5秒以上沈黙")
+        #           enableAizuchi = True
+        #         detectedSilence = False
+        #     else:
+        #       detectedSilence = True
+        #       detectedSilenceTime = time.perf_counter()
+        # else:
+        #   if detectedSilence:
+        #     if time.perf_counter() - detectedSilenceTime > 0.5:
+        #       if waitingSilence:
+        #         print("0.5秒以上沈黙")
+        #         enableAizuchi = True
+        #       detectedSilence = False
+        #   else:
+        #     detectedSilence = True
+        #     detectedSilenceTime = time.perf_counter()
 
         # os.remove(filePath)
       

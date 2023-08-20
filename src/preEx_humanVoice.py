@@ -63,7 +63,7 @@ def savewav(sig,filePath):
   w.close()
 
 def aizuchi():
-  fileList = ['./wavs/un1.wav', './wavs/un2.wav', './wavs/un3.wav', './wavs/un4.wav', './wavs/un6.wav', './wavs/un7.wav', './wavs/hai1.wav', './wavs/hai2.wav', './wavs/hai3.wav', './wavs/haihai1.wav', './wavs/u-n1.wav', './wavs/unun1.wav']
+  fileList = ['./wavs/un1.wav', './wavs/un3.wav', './wavs/un4.wav', './wavs/un6.wav', './wavs/un7.wav', './wavs/un8.wav','./wavs/un9.wav','./wavs/hai1.wav', './wavs/hai2.wav', './wavs/hai3.wav', './wavs/hai4.wav','./wavs/hai5.wav','./wavs/haihai1.wav', './wavs/u-n1.wav', './wavs/u-n2.wav', './wavs/unun1.wav']
   choicedFile = random.choice(fileList)
   playsound(choicedFile)
   print(choicedFile)
@@ -167,7 +167,7 @@ def detectAizuchi():
   global waitingSilence
   while True:
     if enableAizuchi:
-      if time.perf_counter() - detectedTime > poseTime or waitingSilence:
+      if time.perf_counter() - detectedTime > poseTime:
         aizuchi()
         time.sleep(2)
         enableAizuchi = False
@@ -208,26 +208,26 @@ def detectAizuchi():
               enableAizuchi = True
               detectedTime = time.perf_counter()
               print("相槌まで%s秒" % poseTime)
-          else:
-            if detectedSilence:
-              if time.perf_counter() - detectedSilenceTime > 0.5:
-                if waitingSilence:
-                  print("0.5秒以上沈黙")
-                  enableAizuchi = True
-                detectedSilence = False
-            else:
-              detectedSilence = True
-              detectedSilenceTime = time.perf_counter()
-        else:
-          if detectedSilence:
-            if time.perf_counter() - detectedSilenceTime > 0.5:
-              if waitingSilence:
-                print("0.5秒以上沈黙")
-                enableAizuchi = True
-              detectedSilence = False
-          else:
-            detectedSilence = True
-            detectedSilenceTime = time.perf_counter()
+        #   else:
+        #     if detectedSilence:
+        #       if time.perf_counter() - detectedSilenceTime > 0.5:
+        #         if waitingSilence:
+        #           print("0.5秒以上沈黙")
+        #           enableAizuchi = True
+        #         detectedSilence = False
+        #     else:
+        #       detectedSilence = True
+        #       detectedSilenceTime = time.perf_counter()
+        # else:
+        #   if detectedSilence:
+        #     if time.perf_counter() - detectedSilenceTime > 0.5:
+        #       if waitingSilence:
+        #         print("0.5秒以上沈黙")
+        #         enableAizuchi = True
+        #       detectedSilence = False
+        #   else:
+        #     detectedSilence = True
+        #     detectedSilenceTime = time.perf_counter()
 
         # os.remove(filePath)
       

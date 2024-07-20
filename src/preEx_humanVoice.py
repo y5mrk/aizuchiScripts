@@ -63,7 +63,7 @@ def savewav(sig,filePath):
   w.close()
 
 def aizuchi():
-  fileList = ['./wavs/un1.wav', './wavs/un3.wav', './wavs/un4.wav', './wavs/un6.wav', './wavs/un7.wav', './wavs/un8.wav','./wavs/un9.wav','./wavs/hai1.wav', './wavs/hai2.wav', './wavs/hai3.wav', './wavs/hai4.wav','./wavs/hai5.wav','./wavs/haihai1.wav', './wavs/u-n1.wav', './wavs/u-n2.wav', './wavs/unun1.wav']
+  fileList = ['./wavs/un1.wav', './wavs/hai5.wav', './wavs/un4.wav', './wavs/un6.wav', './wavs/un7.wav', './wavs/un8.wav','./wavs/un9.wav','./wavs/hai1.wav', './wavs/hai2.wav', './wavs/hai3.wav', './wavs/hai4.wav','./wavs/hai5.wav','./wavs/haihai1.wav', './wavs/u-n1.wav', './wavs/u-n2.wav', './wavs/unun1.wav']
   choicedFile = random.choice(fileList)
   playsound(choicedFile)
   print(choicedFile)

@@ -63,7 +63,7 @@ def savewav(sig,filePath):
   w.close()
 
 def aizuchi():
-  fileList = ['./wavs/un1.wav', './wavs/hai5.wav', './wavs/un4.wav', './wavs/un6.wav', './wavs/un7.wav', './wavs/un8.wav','./wavs/un9.wav','./wavs/hai1.wav', './wavs/hai2.wav', './wavs/hai3.wav', './wavs/hai4.wav','./wavs/hai5.wav','./wavs/haihai1.wav', './wavs/u-n1.wav', './wavs/u-n2.wav', './wavs/unun1.wav']
+  fileList = ['src/wavs/un1.wav', 'src/wavs/hai5.wav', 'src/wavs/un4.wav', 'src/wavs/un6.wav', 'src/wavs/un7.wav', 'src/wavs/un8.wav','src/wavs/un9.wav','src/wavs/hai1.wav', 'src/wavs/hai2.wav', 'src/wavs/hai3.wav', 'src/wavs/hai4.wav','src/wavs/hai5.wav','src/wavs/haihai1.wav', 'src/wavs/u-n1.wav', 'src/wavs/u-n2.wav', 'src/wavs/unun1.wav']
   choicedFile = random.choice(fileList)
   playsound(choicedFile)
   print(choicedFile)
@@ -135,7 +135,7 @@ def transcribeWav():
     inputFiles = wavFiles
     print(inputFiles)
     wavFiles = []
-    outputFilePath = './data/sample.wav'
+    outputFilePath = 'src/data/sample.wav'
     joinWaves(inputFiles,outputFilePath)
     model = whisper.load_model("base")
     result = model.transcribe(outputFilePath)
@@ -179,7 +179,7 @@ def detectAizuchi():
         sig = np.frombuffer(input, dtype="int16") / 32768
         now_dt = datetime.datetime.now() #現在時刻
         isoDate = now_dt.isoformat()
-        filePath = "./data/sample_"+isoDate+".wav"
+        filePath = "src/data/sample_"+isoDate+".wav"
 
         savewav(sig,filePath)
         # wavFiles.append(filePath)

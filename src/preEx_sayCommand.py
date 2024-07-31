@@ -138,7 +138,7 @@ def transcribeWav():
     inputFiles = wavFiles
     print(inputFiles)
     wavFiles = []
-    outputFilePath = './data/sample.wav'
+    outputFilePath = 'src/data/sample.wav'
     joinWaves(inputFiles,outputFilePath)
     model = whisper.load_model("base")
     result = model.transcribe(outputFilePath)
@@ -182,7 +182,7 @@ def detectAizuchi():
         sig = np.frombuffer(input, dtype="int16") / 32768
         now_dt = datetime.datetime.now() #現在時刻
         isoDate = now_dt.isoformat()
-        filePath = "./data/sample_"+isoDate+".wav"
+        filePath = "src/data/sample_"+isoDate+".wav"
 
         savewav(sig,filePath)
         # wavFiles.append(filePath)
